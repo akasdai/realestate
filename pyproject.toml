@@ -1,0 +1,17 @@
+[project]
+name = "korea-realestate-mcp"
+version = "0.1.0"
+description = "한국 부동산 실거래가 MCP 서버 - 국토교통부 공공데이터 기반"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "httpx>=0.28.0",
+    "python-dotenv>=1.2.1",
+]
+
+[project.scripts]
+korea-realestate-mcp = "server:main"
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.backends.legacy:build"

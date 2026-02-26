@@ -1,14 +1,230 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+  <title>한국 부동산 실거래가 조회</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+  <header>
+    <div class="header-inner">
+      <h1>&#127968; 한국 부동산 실거래가 조회</h1>
+      <p class="subtitle">국토교통부 공공데이터 기반 실거래가 정보</p>
+    </div>
+  </header>
+
+  <main>
+    <!-- 검색 폼 -->
+    <section class="search-card">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="region-input">지역명</label>
+          <div class="input-with-badge">
+            <input
+              id="region-input"
+              type="text"
+              placeholder="예: 강남구, 마포구, 해운대구"
+              autocomplete="off"
+            />
+            <span id="region-badge" class="region-badge hidden"></span>
+          </div>
+          <div id="region-candidates" class="candidates hidden"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="year-month-input">거래년월</label>
+          <input id="year-month-input" type="month" />
+        </div>
+
+        <div class="form-group">
+          <label for="rows-input">최대 건수</label>
+          <select id="rows-input">
+            <option value="50">50건</option>
+            <option value="100" selected>100건</option>
+            <option value="200">200건</option>
+            <option value="500">500건</option>
+          </select>
+        </div>
+
+        <div class="form-group form-group--btn">
+          <button id="search-btn" class="btn-primary" disabled>조회</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 부동산 종류 탭 -->
+    <section class="tabs-section">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="apt" role="tab">아파트</button>
+        <button class="tab" data-tab="offi" role="tab">오피스텔</button>
+        <button class="tab" data-tab="villa" role="tab">빌라</button>
+        <button class="tab" data-tab="house" role="tab">단독주택</button>
+        <button class="tab" data-tab="commercial" role="tab">상업용</button>
+      </div>
+
+      <!-- 거래유형 라디오 (상업용은 매매만) -->
+      <div id="deal-type-row" class="deal-type-row">
+        <label class="radio-label">
+          <input type="radio" name="deal-type" value="trade" checked /> 매매
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="deal-type" value="rent" /> 전월세
+        </label>
+      </div>
+    </section>
+
+    <!-- 결과 필터 -->
+    <section class="filter-card" id="filter-card">
+      <div class="filter-header">
+        <span class="filter-title">결과 필터</span>
+        <button class="filter-reset" id="filter-reset">초기화</button>
+      </div>
+      <div class="filter-grid">
+
+        <!-- 전용면적 -->
+        <div class="filter-group">
+          <label class="filter-label">전용면적</label>
+          <div class="range-row">
+            <input type="number" id="f-area-min" placeholder="최소" min="0" step="1">
+            <span class="range-sep">~</span>
+            <input type="number" id="f-area-max" placeholder="최대" min="0" step="1">
+            <span class="range-unit">m²</span>
+          </div>
+          <div class="pyeong-chips">
+            <button class="chip" data-area-min="0"   data-area-max="33">~10평</button>
+            <button class="chip" data-area-min="33"  data-area-max="66">10~20평</button>
+            <button class="chip" data-area-min="66"  data-area-max="99">20~30평</button>
+            <button class="chip" data-area-min="99"  data-area-max="132">30~40평</button>
+            <button class="chip" data-area-min="132" data-area-max="">40평~</button>
+          </div>
+          <div class="pyeong-hint" id="pyeong-hint"></div>
+        </div>
+
+        <!-- 거래금액 / 보증금 -->
+        <div class="filter-group" id="f-price-group">
+          <label class="filter-label" id="f-price-label">거래금액</label>
+          <div class="range-row">
+            <input type="number" id="f-price-min" placeholder="최소" min="0" step="0.1">
+            <span class="range-sep">~</span>
+            <input type="number" id="f-price-max" placeholder="최대" min="0" step="0.1">
+            <span class="range-unit">억원</span>
+          </div>
+          <div class="price-chips" id="price-chips">
+            <button class="chip" data-price-max="3">3억↓</button>
+            <button class="chip" data-price-min="3" data-price-max="6">3~6억</button>
+            <button class="chip" data-price-min="6" data-price-max="10">6~10억</button>
+            <button class="chip" data-price-min="10" data-price-max="20">10~20억</button>
+            <button class="chip" data-price-min="20">20억↑</button>
+          </div>
+        </div>
+
+        <!-- 층 -->
+        <div class="filter-group" id="f-floor-group">
+          <label class="filter-label">층</label>
+          <div class="range-row">
+            <input type="number" id="f-floor-min" placeholder="최소" min="1" step="1">
+            <span class="range-sep">~</span>
+            <input type="number" id="f-floor-max" placeholder="최대" min="1" step="1">
+            <span class="range-unit">층</span>
+          </div>
+          <div class="floor-chips">
+            <button class="chip" data-floor-min="1"  data-floor-max="5">저층(1~5)</button>
+            <button class="chip" data-floor-min="6"  data-floor-max="15">중층(6~15)</button>
+            <button class="chip" data-floor-min="16">고층(16↑)</button>
+          </div>
+        </div>
+
+        <!-- 건축년도 -->
+        <div class="filter-group">
+          <label class="filter-label">건축년도</label>
+          <div class="range-row">
+            <input type="number" id="f-year-min" placeholder="최소" min="1970" max="2030" step="1">
+            <span class="range-sep">~</span>
+            <input type="number" id="f-year-max" placeholder="최대" min="1970" max="2030" step="1">
+            <span class="range-unit">년</span>
+          </div>
+          <div class="year-chips">
+            <button class="chip" data-year-min="2020">2020년↑</button>
+            <button class="chip" data-year-min="2010" data-year-max="2019">2010년대</button>
+            <button class="chip" data-year-min="2000" data-year-max="2009">2000년대</button>
+            <button class="chip" data-year-max="1999">~1999년</button>
+          </div>
+        </div>
+
+        <!-- 세대수 (단지정보 API) -->
+        <div class="filter-group complex-filter" id="f-units-group">
+          <label class="filter-label">
+            세대수
+            <span class="complex-api-badge" id="complex-api-badge" title="공동주택 단지정보 API 연동">
+              &#9679; 단지정보
+            </span>
+          </label>
+          <div class="range-row">
+            <input type="number" id="f-units-min" placeholder="최소" min="0" step="1">
+            <span class="range-sep">~</span>
+            <input type="number" id="f-units-max" placeholder="최대" min="0" step="1">
+            <span class="range-unit">세대</span>
+          </div>
+          <div class="units-chips">
+            <button class="chip" data-units-max="100">~100</button>
+            <button class="chip" data-units-min="100" data-units-max="300">100~300</button>
+            <button class="chip" data-units-min="300" data-units-max="1000">300~1000</button>
+            <button class="chip" data-units-min="1000">1000↑</button>
+          </div>
+        </div>
+
+        <!-- 주차대수 (단지정보 API) -->
+        <div class="filter-group complex-filter" id="f-parking-group">
+          <label class="filter-label">
+            주차대수
+            <span class="complex-api-badge">&#9679; 단지정보</span>
+          </label>
+          <div class="range-row">
+            <input type="number" id="f-parking-min" placeholder="최소" min="0" step="1">
+            <span class="range-sep">~</span>
+            <input type="number" id="f-parking-max" placeholder="최대" min="0" step="1">
+            <span class="range-unit">대</span>
+          </div>
+          <div class="parking-chips">
+            <button class="chip" data-parking-max="50">~50대</button>
+            <button class="chip" data-parking-min="50" data-parking-max="200">50~200대</button>
+            <button class="chip" data-parking-min="200" data-parking-max="500">200~500대</button>
+            <button class="chip" data-parking-min="500">500대↑</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 단지정보 API 상태 -->
+      <div class="complex-api-status" id="complex-api-status"></div>
+    </section>
+
+    <!-- 로딩 / 에러 -->
+    <div id="loading" class="loading hidden">
+      <span class="spinner"></span> 데이터를 불러오는 중...
+    </div>
+    <div id="error-msg" class="error-msg hidden"></div>
+
+    <!-- 요약 카드 -->
+    <section id="summary-section" class="summary-section hidden">
+      <div class="summary-grid" id="summary-grid"></div>
+    </section>
+
+    <!-- 결과 테이블 -->
+    <section id="result-section" class="result-section hidden">
+      <div class="table-header">
+        <span id="result-count"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="result-table">
+          <thead id="result-thead"></thead>
+          <tbody id="result-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/main.js" defer></script>
 </body>
 </html>

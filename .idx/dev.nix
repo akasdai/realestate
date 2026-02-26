@@ -7,6 +7,7 @@
   packages = [
     pkgs.nodejs_20
     pkgs.python3
+    pkgs.python312Packages.pip
   ];
   # Sets environment variables in the workspace
   env = {};
@@ -21,7 +22,7 @@
       enable = true;
       previews = {
         web = {
-          command = ["python3" "-m" "http.server" "$PORT" "--bind" "0.0.0.0"];
+          command = ["bash" "-c" "MCP_TRANSPORT=http MCP_PORT=$PORT .venv/bin/python server.py"];
           manager = "web";
         };
       };
@@ -30,15 +31,17 @@
     workspace = {
       # Runs when a workspace is first created
       onCreate = {
-        # Example: install JS dependencies from NPM
-        # npm-install = "npm install";
+        # Python 가상환경 생성 및 MCP 서버 의존성 설치
+        setup-python-venv = "python3 -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install mcp httpx python-dotenv";
         # Open editors for the following files by default, if they exist:
-        default.openFiles = [ "style.css" "main.js" "index.html" ];
+        default.openFiles = [ "server.py" "_helpers.py" ];
       };
       # Runs when the workspace is (re)started
       onStart = {
-        # Example: start a background task to watch and re-build backend code
-        # watch-backend = "npm run watch-backend";
+        # 가상환경이 없으면 재설치
+        ensure-venv = "[ -d .venv ] || (python3 -m venv .venv && .venv/bin/pip install mcp httpx python-dotenv)";
+        # MCP 서버 HTTP 모드로 자동 시작
+        start-mcp-server = "MCP_TRANSPORT=http .venv/bin/python server.py &";
       };
     };
   };
